@@ -58,7 +58,7 @@ router.post("/gatepass", async (req, res) => {
 
     // Insert the gatepass details into the database and fetch the id (assuming this table has a Gatepass id)
     const insertQuery = `
-            INSERT INTO gatepasses (name, rrn, degree, block_room, time_out, time_in, reason, student_contact, parent_contact,rt_name, rtid,)
+            INSERT INTO gatepasses (name, rrn, degree, block_room, time_out, time_in, reason, student_contact, parent_contact,rt_name, rtid)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING rtid,id
         `;
     const values = [
