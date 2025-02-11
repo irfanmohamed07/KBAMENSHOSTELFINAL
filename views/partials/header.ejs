@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kba menshostel</title>
+    <link rel="icon" type="image/x-icon" href="/images/logo.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <meta name="google-site-verification" content="31FXDlAT8bXUaixXA8-nqQPzr8X5oA5LeeNSMw0of_s" />
+
+</head>
+<body>
+  <section class="Header">
+    
+    <a href="#" class="logo"><img src="/images/logo.jpg" alt="Logo"></a>
+     
+    <nav class="navbar">
+        <a href="/">Home</a>
+        <a href="/gatepass">Gate pass</a>
+        <a href="/maintenance">Maintanance</a>
+        <a href="/medical">Medical </a>
+        <a href="/aboutus">About Us</a>
+        
+    </nav>
+     
+    <% if (user) { %>
+        <div class="profile">
+            <div class="avatar" onclick="toggleDropdown()">
+                <span><%= user.name.charAt(0).toUpperCase() %></span> 
+            </div>
+            <div class="dropdown-arrow">▼</div>
+            <div class="dropdown-menu" id="dropdown-menu">
+                <p>Welcome, <%= user.name %></p>
+                <a href="/">Home</a>
+                <a href="/gatepass">Gate Pass</a>
+                <a href="/maintenance">Maintenance</a>
+                <a href="/medical">Medical</a>
+                <a href="/aboutus">About us</a>
+                <a href="/logout">Log out</a>
+            </div>
+        </div>
+    <% } %>
+
+ 
+   
+</section>
