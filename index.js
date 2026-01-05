@@ -29,6 +29,7 @@ import {
 } from "./middleware/authmiddleware.js";
 import watchmanRoute from "./Routes/watchmanRoute.js";
 import watchmanloginRoute from "./Routes/watchmanloginRoute.js";
+import smartMaintenanceRoute from "./Routes/smartMaintenanceRoute.js";
 
 const app = express();
 const port = 3000;
@@ -44,7 +45,9 @@ app.use(
 
 app.set("view engine", "ejs");
 app.use(express.static("public"));
+app.use("/uploads", express.static("uploads")); // Serve uploaded PDFs
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json()); // Enable JSON body parsing for API routes
 
 app.use("/", loginRoute);
 app.use("/", userforgotpasswordRoute);
@@ -68,6 +71,7 @@ app.use("/", checkAuthenticated, electricalworkRoute);
 app.use("/", checkAuthenticated, carpentryworkRoute);
 app.use("/", checkAuthenticated, medicalRoute);
 app.use("/", checkAuthenticated, aboutusRoute);
+app.use("/", checkAuthenticated, smartMaintenanceRoute); // AI-powered maintenance
 
 app.use((req, res, next) => {
   res.render("404", { user: req.session.user });

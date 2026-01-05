@@ -2,12 +2,19 @@ import express from "express";
 import pool from "../Db/index.js";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
-import { s3 } from "../config/awsconfig.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const router = express.Router();
+
+// Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDir = path.join(__dirname, "..", "uploads");
 
 router.get("/rtadminpanel", async (req, res) => {
   if (req.session.isRtAdminAuthenticated) {
@@ -90,16 +97,12 @@ router.post("/approvegatepass/:id", async (req, res) => {
     const userEmail = userResult.rows[0].email; // Extract the email
     const parentEmail = userResult.rows[0].parent_email;
 
-    // Step 3: Retrieve the PDF file from S3 (using the pdf_url from the gatepass)
+    // Step 3: Retrieve the PDF file from local uploads folder
     const fileName = pdf_url.split("/").pop(); // Extract file name from the URL
+    const pdfFilePath = path.join(uploadsDir, fileName);
 
-    const s3Params = {
-      Bucket: process.env.AWS_BUCKET_NAME, // Use your AWS S3 bucket name
-      Key: `uploads/${fileName}`, // The file key in S3
-    };
-
-    // Get the PDF file from S3
-    const s3File = await s3.getObject(s3Params).promise();
+    // Read the PDF file from local storage
+    const pdfBuffer = fs.readFileSync(pdfFilePath);
 
     // Step 4: Prepare email content and send the PDF
     const mailOptions = {
@@ -110,8 +113,7 @@ router.post("/approvegatepass/:id", async (req, res) => {
       attachments: [
         {
           filename: fileName,
-          content: s3File.Body, // Attach the PDF binary data
-          encoding: "base64",
+          content: pdfBuffer, // Attach the PDF binary data from local file
         },
       ],
     };

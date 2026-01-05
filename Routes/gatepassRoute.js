@@ -3,14 +3,24 @@ import axios from "axios";
 import pool from "../Db/index.js";
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
-import AWS from "aws-sdk";
-import { PassThrough } from "stream";
-import { s3 } from "../config/awsconfig.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const router = express.Router();
+
+// Get directory path for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDir = path.join(__dirname, "..", "uploads");
+
+// Ensure uploads directory exists
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 router.get("/gatepass", async (req, res) => {
   try {
@@ -91,22 +101,14 @@ router.post("/gatepass", async (req, res) => {
 
     // Setup PDF document
     const doc = new PDFDocument();
-    const passThrough = new PassThrough(); // Creates the stream to S3
-    const pdfKey = `uploads/Gatepass_${rrn}_${Date.now()}.pdf`; // PDF file path in S3
+    const pdfFileName = `Gatepass_${rrn}_${Date.now()}.pdf`;
+    const pdfFilePath = path.join(uploadsDir, pdfFileName);
 
-    // S3 upload setup (use the passThrough stream as the file body)
-    const s3Upload = s3
-      .upload({
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: pdfKey,
-        Body: passThrough, // Streaming to S3
-        ContentType: "application/pdf",
-        ACL: "public-read",
-      })
-      .promise();
+    // Create write stream to save PDF locally
+    const writeStream = fs.createWriteStream(pdfFilePath);
 
-    // Start piping the generated PDF document into the passThrough stream
-    doc.pipe(passThrough);
+    // Pipe PDF document to the write stream
+    doc.pipe(writeStream);
 
     // Set up the page with margin and border
     const margin = 50;
@@ -213,10 +215,14 @@ router.post("/gatepass", async (req, res) => {
 
     doc.end();
 
-    // Wait for the file upload to S3 to complete
-    await s3Upload;
+    // Wait for the PDF file to be written
+    await new Promise((resolve, reject) => {
+      writeStream.on("finish", resolve);
+      writeStream.on("error", reject);
+    });
 
-    const pdfUrl = `https://crescentnotes.s3.amazonaws.com/${pdfKey}`;
+    // Store local file path in database
+    const pdfUrl = `/uploads/${pdfFileName}`;
     const updateQuery = `
             UPDATE gatepasses
             SET pdf_url = $1
@@ -228,6 +234,7 @@ router.post("/gatepass", async (req, res) => {
     res.render("gatepass", {
       rtNames,
       message: "Gatepass request sent successfully!",
+      pdfUrl: pdfUrl,
       user: req.session.user,
     });
   } catch (error) {
